@@ -98,6 +98,8 @@ class MCP342X {
     public:
         MCP342X();
         MCP342X(uint8_t address);
+        MCP342X(uint8_t address, TwoWire *localWire);
+	MCP342X(TwoWire *localWire); 
         
         bool testConnection(void);
 
@@ -119,6 +121,8 @@ class MCP342X {
         uint8_t checkforResult(int32_t *data);
 
     private:
+	TwoWire *_Wire;
+
         uint8_t devAddr;
         uint8_t configRegShdw;
 	//float	stepSizeTbl[];

@@ -46,21 +46,44 @@
 */
 
 /******************************************
- * Default constructor, uses default I2C address.
+ * Default constructor, uses default I2C address and default Wire interface
  * @see MCP342X_DEFAULT_ADDRESS
  */
 MCP342X::MCP342X() {
     devAddr = MCP342X_DEFAULT_ADDRESS;
+    _Wire = &Wire;
 }
 
 /******************************************
- * Specific address constructor.
+ * Specific address constructor, uses specified I2C address and default Wire interface
  * @param address I2C address
  * @see MCP342X_DEFAULT_ADDRESS
  * @see MCP342X_A0GND_A1GND, etc.
  */
 MCP342X::MCP342X(uint8_t address) {
     devAddr = address;
+    _Wire = &Wire;
+}
+
+/******************************************
+ * Specific address and interface constructor, uses specified I2C address and Wire interface
+ * @param address I2C address
+ * @param *localWire Wire interface
+ * @see MCP342X_DEFAULT_ADDRESS
+ * @see MCP342X_A0GND_A1GND, etc.
+ */
+MCP342X::MCP342X(uint8_t address, TwoWire *localWire) {
+    devAddr = address;
+    _Wire = localWire;
+}
+
+/******************************************
+ * Specific Wire interface constructor.
+ * @param *localWire Wire interface
+ */
+MCP342X::MCP342X(TwoWire *localWire) {
+    devAddr = MCP342X_DEFAULT_ADDRESS;
+    _Wire = localWire;
 }
 
 /******************************************
@@ -69,8 +92,8 @@ MCP342X::MCP342X(uint8_t address) {
  * @return True if connection is valid, false otherwise
  */
 bool MCP342X::testConnection() {
-    Wire.beginTransmission(devAddr);
-    return (Wire.endTransmission() == 0);
+    _Wire->beginTransmission(devAddr);
+    return (_Wire->endTransmission() == 0);
 }
 
 
@@ -101,9 +124,9 @@ uint8_t MCP342X::getConfigRegShdw(void) {
  *   the shadow configuration register
  */
 bool MCP342X::startConversion(void) {
-  Wire.beginTransmission(devAddr);
-  Wire.write(configRegShdw | MCP342X_RDY);
-  return (Wire.endTransmission() == 0);
+  _Wire->beginTransmission(devAddr);
+  _Wire->write(configRegShdw | MCP342X_RDY);
+  return (_Wire->endTransmission() == 0);
 }
 
  
@@ -113,11 +136,11 @@ bool MCP342X::startConversion(void) {
  *   supplied channel
  */
 bool MCP342X::startConversion(uint8_t channel) {
-  Wire.beginTransmission(devAddr);
+  _Wire->beginTransmission(devAddr);
   configRegShdw = ((configRegShdw & ~MCP342X_CHANNEL_MASK) | 
 			   (channel & MCP342X_CHANNEL_MASK));
-  Wire.write(configRegShdw | MCP342X_RDY);
-  return (Wire.endTransmission() == 0);
+  _Wire->write(configRegShdw | MCP342X_RDY);
+  return (_Wire->endTransmission() == 0);
 }
 
  
@@ -135,10 +158,10 @@ uint8_t MCP342X::getResult(int16_t *dataPtr) {
   }
 
   do {
-     if(Wire.requestFrom(devAddr, (uint8_t) 3) == 3) {
-       ((char*)dataPtr)[1] = Wire.read();
-       ((char*)dataPtr)[0] = Wire.read();
-       adcStatus = Wire.read();
+     if(_Wire->requestFrom(devAddr, (uint8_t) 3) == 3) {
+       ((char*)dataPtr)[1] = _Wire->read();
+       ((char*)dataPtr)[0] = _Wire->read();
+       adcStatus = _Wire->read();
      }
      else return 0xFF;
   } while((adcStatus & MCP342X_RDY) != 0x00);
@@ -159,10 +182,10 @@ uint8_t MCP342X::checkforResult(int16_t *dataPtr) {
     return 0xFF;
   }
 
-  if(Wire.requestFrom(devAddr, (uint8_t) 3) == 3) {
-    ((char*)dataPtr)[1] = Wire.read();
-    ((char*)dataPtr)[0] = Wire.read();
-    adcStatus = Wire.read();
+  if(_Wire->requestFrom(devAddr, (uint8_t) 3) == 3) {
+    ((char*)dataPtr)[1] = _Wire->read();
+    ((char*)dataPtr)[0] = _Wire->read();
+    adcStatus = _Wire->read();
   }
   else return 0xFF;
 
@@ -185,11 +208,11 @@ uint8_t MCP342X::getResult(int32_t *dataPtr) {
   }
 
   do {
-     if(Wire.requestFrom((uint8_t) devAddr, (uint8_t) 4) == 4) {
-       ((char*)dataPtr)[3] = Wire.read();
-       ((char*)dataPtr)[2] = Wire.read();
-       ((char*)dataPtr)[1] = Wire.read();
-       adcStatus = Wire.read();
+     if(_Wire->requestFrom((uint8_t) devAddr, (uint8_t) 4) == 4) {
+       ((char*)dataPtr)[3] = _Wire->read();
+       ((char*)dataPtr)[2] = _Wire->read();
+       ((char*)dataPtr)[1] = _Wire->read();
+       adcStatus = _Wire->read();
      }
      else return 0xFF;
   } while((adcStatus & MCP342X_RDY) != 0x00);
@@ -212,11 +235,11 @@ uint8_t MCP342X::checkforResult(int32_t *dataPtr) {
     return 0xFF;
   }
 
-  if(Wire.requestFrom((uint8_t) devAddr, (uint8_t) 4) == 4) {
-    ((char*)dataPtr)[3] = Wire.read();
-    ((char*)dataPtr)[2] = Wire.read();
-    ((char*)dataPtr)[1] = Wire.read();
-    adcStatus = Wire.read();
+  if(_Wire->requestFrom((uint8_t) devAddr, (uint8_t) 4) == 4) {
+    ((char*)dataPtr)[3] = _Wire->read();
+    ((char*)dataPtr)[2] = _Wire->read();
+    ((char*)dataPtr)[1] = _Wire->read();
+    adcStatus = _Wire->read();
   }
   else return 0xFF;
 
